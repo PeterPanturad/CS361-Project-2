@@ -79,15 +79,34 @@ def initGraphs():
     dens2.addEdge(2, 5, 5)
     dens2.addEdge(3, 5, 4)
 
-    return spars1, spars2, dens1, dens2
+    dens3 = graph("dens3", 8)
+    dens3.addEdge(0, 1, 2)
+    dens3.addEdge(0, 2, 5)
+    dens3.addEdge(0, 4, 16)
+    dens3.addEdge(0, 5, 9)
+    dens3.addEdge(0, 6, 4)
+    dens3.addEdge(0, 7, 5)
+    dens3.addEdge(1, 2, 10)
+    dens3.addEdge(1, 4, 4)
+    dens3.addEdge(1, 6, 4)
+    dens3.addEdge(1, 7, 6)
+    dens3.addEdge(3, 2, 10)
+    dens3.addEdge(3, 4, 4)
+    dens3.addEdge(4, 2, 15)
+    dens3.addEdge(4, 7, 10)
+    dens3.addEdge(6, 5, 18)
+    dens3.addEdge(6, 7, 2)
+
+    return spars1, spars2, dens1, dens2, dens3
 
 def main(): 
-    spars1, spars2, dens1, dens2 = initGraphs()
+    spars1, spars2, dens1, dens2, dens3 = initGraphs()
 
     spars1.printGraph()
     spars2.printGraph()
     dens1.printGraph()
     dens2.printGraph()
+    dens3.printGraph()
 
 if __name__ == "__main__":
     main()
