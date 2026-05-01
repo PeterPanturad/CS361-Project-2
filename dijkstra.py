@@ -1,6 +1,7 @@
 # Libraries
 import time
 import sys
+import heapq
 import numpy as np
 
 # Constants ----------------------------------------
@@ -145,7 +146,25 @@ def arrayBasedDijkstra(g, start):                                           # ar
     return dist
 
 def priorityQueueBasedDijkstra(g, start):
-    print("placehodler")
+    print("Starting priority queue based Dijkstra's Algorithm")
+    priorityQueue = []
+    dist = [sys.maxsize] * g.v
+
+    dist[start] = 0
+    heapq.heappush(priorityQueue, (0, start))
+
+    while priorityQueue:
+        minWeight, node = heapq.heappop(priorityQueue)
+
+        if minWeight > dist[node]:
+            continue
+
+        for neighbor, weight in g.list[node]:
+            if dist[node] + weight < dist[neighbor]:
+                dist[neighbor] = dist[node] + weight;
+                heapq.heappush(priorityQueue, (dist[neighbor], neighbor))
+    return dist
+
         
 
 def main(): 
@@ -158,6 +177,7 @@ def main():
     dens3.printGraph()
 
     print(arrayBasedDijkstra(spars1, 0))
+    print(priorityQueueBasedDijkstra(spars1, 0))
 
 if __name__ == "__main__":
     main()
