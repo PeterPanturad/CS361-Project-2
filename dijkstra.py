@@ -124,40 +124,33 @@ def arrayBasedDijkstra(g, start):                                           # ar
 
     parent = [-1] * g.v                                                     # initialize our parent array with total elements equal to vertex, setting all elements to -1. this array will hold the previous node hop for each node.
 
-    if(not g.sparse):                                                       # if the graph is dense, we will use the adjacency matrix representation of the graph
+    if(not g.sparse):   
         print("isDense -> using adjList| ", end="")
-        for _ in range(g.v):                                                # loop through the total number of vertices
-            node = -1                                                       # initialize variable which will hold the node with least cost
-            minWeight = sys.maxsize                                         # initialize variable which will hold the least cost edge
-            for i in range(g.v):                                            # loop through each vertices. if a vertex hasn't been visited and their edge cost is the smallest out of the unvisited, we will visit that node
-                if not visited[i] and dist[i] < minWeight:
-                    minWeight = dist[i]
-                    node = i
-            if node == -1: break                                            # if we don't find a visited node, we are done
-            visited[node] = True                                        
-
+    else:                                                   
+        print("isSparse -> using adjMatrix | ", end="")    
+        
+    for _ in range(g.v):                                                # loop through the total number of vertices
+        node = -1                                                       # initialize variable which will hold the node with least cost
+        minWeight = sys.maxsize                                         # initialize variable which will hold the least cost edge
+        for i in range(g.v):                                            # loop through each vertices. if a vertex hasn't been visited and their edge cost is the smallest out of the unvisited, we will visit that node
+            if not visited[i] and dist[i] < minWeight:
+                minWeight = dist[i]
+                node = i
+        if node == -1: break                                            # if we don't find a visited node, we are done
+        visited[node] = True                                        
+        if(not g.sparse):                                                       # if the graph is dense, we will use the adjacency matrix representation of the graph
             for neighbor in range(g.v):                                     # look through the row of our node, checking all vertices to see if they have an edge
                 if g.matrix[node][neighbor] > 0 and not visited[neighbor]:  # if our visited node has an edge with another node, the weight is > 0, and if it is not visited, we enter our relaxation rule
                     if dist[node] + g.matrix[node][neighbor] < dist[neighbor]:  # if the new total distance from current node to neighboring node is less than the existing known route to the neighboring node, we relax the known shortest distance
                         dist[neighbor] = dist[node] + g.matrix[node][neighbor]; # we set the new route with shortest distance as the new known shortest path
                         parent[neighbor] = node                             # update our parent array for our neighbor, saying we got here from this node
-    else:                                                                   # else if the graph is a sparse graph, we will use the adjacency list representation of the graph, same logic as above!
-        print("isSparse -> using adjMatrix | ", end="")                      
-        for _ in range(g.v):
-            node = -1
-            minWeight = sys.maxsize
-            for i in range(g.v):
-                if not visited[i] and dist[i] < minWeight:
-                    minWeight = dist[i]
-                    node = i
-            if node == -1: break
-            visited[node] = True
+        else:                                                                   # else if the graph is a sparse graph, we will use the adjacency list representation of the graph, same logic as above!
+                for neighbor, weight in g.list[node]:
+                    if weight > 0 and not visited[neighbor]:
+                        if dist[node] + weight < dist[neighbor]:
+                            dist[neighbor] = dist[node] + weight;
+                            parent[neighbor] = node
 
-            for neighbor, weight in g.list[node]:
-                if weight > 0 and not visited[neighbor]:
-                    if dist[node] + weight < dist[neighbor]:
-                        dist[neighbor] = dist[node] + weight;
-                        parent[neighbor] = node
     print(f"{dist} | parent: ", end="")
     print(parent)
     return dist, parent
