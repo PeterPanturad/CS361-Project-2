@@ -2,7 +2,7 @@
 import time
 import sys
 import heapq
-import numpy as np
+import tracemalloc
 
 # Constants ----------------------------------------
 
@@ -104,14 +104,28 @@ def initGraphs():                                                           # in
 
     return spars1, spars2, dens1, dens2, dens3
 
-def arrayBasedDijkstra(g, start):                                           # array-based Dijkstra's Algorithm, usage: output = arrayBasedDijkstra((class)graph, (int)startNode)
-    print("Starting array-based Dijkstra Algorithm")                                      
+def backtrack(parent, start, target):                                       # takes the parent list from our Dijkstra Algorithm and reconstructs the path it took to get from the starting node and to a target
+    path = []                                                               # init array holding our path
+    current = target                                                        # our current node is the target
+
+    while current != -1:                                                    # walk from our current node till we reach the starting node
+        path.append(current)                                                # add to our path the current node we are on
+        current = parent[current]                                           # the parent array holds the previous node hop for each node, we hop to the previous node, making it our current node
+    path.reverse()                                                          # when done reverse the order
+    if path[0] == start:                                                    # if done right, our first element should equal to our starting node
+        return path
+    return []                                                               # if not we didn't find a path
+
+def arrayBasedDijkstra(g, start):                                           # array-based Dijkstra's Algorithm, usage: output, parent = arrayBasedDijkstra((class)graph, (int)startNode)
+    print("Start array Dijkstra | ", end="")                                      
     dist = [sys.maxsize] * g.v                                              # initialize our distance array with total elements equal to vertex count of graph, setting all distances to infinity
-    visited = [False] * g.v                                                 # initialize our visited array witwh total elements equal to vewrtex count of grpah, setting all visited nodes to false
+    visited = [False] * g.v                                                 # initialize our visited array with total elements equal to vertex count of grpah, setting all visited nodes to false
     dist[start] = 0                                                         # initialize our starting node distance to 0
 
+    parent = [-1] * g.v                                                     # initialize our parent array with total elements equal to vertex, setting all elements to -1. this array will hold the previous node hop for each node.
+
     if(not g.sparse):                                                       # if the graph is dense, we will use the adjacency matrix representation of the graph
-        print("Graph is dense: Using adjacency matrix")
+        print("isDense -> using adjList| ", end="")
         for _ in range(g.v):                                                # loop through the total number of vertices
             node = -1                                                       # initialize variable which will hold the node with least cost
             minWeight = sys.maxsize                                         # initialize variable which will hold the least cost edge
@@ -126,8 +140,9 @@ def arrayBasedDijkstra(g, start):                                           # ar
                 if g.matrix[node][neighbor] > 0 and not visited[neighbor]:  # if our visited node has an edge with another node, the weight is > 0, and if it is not visited, we enter our relaxation rule
                     if dist[node] + g.matrix[node][neighbor] < dist[neighbor]:  # if the new total distance from current node to neighboring node is less than the existing known route to the neighboring node, we relax the known shortest distance
                         dist[neighbor] = dist[node] + g.matrix[node][neighbor]; # we set the new route with shortest distance as the new known shortest path
+                        parent[neighbor] = node                             # update our parent array for our neighbor, saying we got here from this node
     else:                                                                   # else if the graph is a sparse graph, we will use the adjacency list representation of the graph, same logic as above!
-        print("Graph is sparse: Using adjacency list")                      
+        print("isSparse -> using adjMatrix | ", end="")                      
         for _ in range(g.v):
             node = -1
             minWeight = sys.maxsize
@@ -142,30 +157,83 @@ def arrayBasedDijkstra(g, start):                                           # ar
                 if weight > 0 and not visited[neighbor]:
                     if dist[node] + weight < dist[neighbor]:
                         dist[neighbor] = dist[node] + weight;
-           
-    return dist
+                        parent[neighbor] = node
+    print(f"{dist} | parent: ", end="")
+    print(parent)
+    return dist, parent
 
-def priorityQueueBasedDijkstra(g, start):
-    print("Starting priority queue based Dijkstra's Algorithm")
-    priorityQueue = []
-    dist = [sys.maxsize] * g.v
+def priorityQueueBasedDijkstra(g, start):                                   # priority queue based Dijkstra's Algorithm, usage: output, parent = priorityQueueBasedDijkstra((class)graph, (int)startNode)
+    print("Start prio.q Dijkstra | ", end="")
+    priorityQueue = []                                                      # init priority queue
+    dist = [sys.maxsize] * g.v                                              # init our dist array (see arrayBasedDijkstra for more info)
+    dist[start] = 0                                                         # init our starting node in dist array
+    heapq.heappush(priorityQueue, (0, start))                               # push the weight and start node to heap
 
-    dist[start] = 0
-    heapq.heappush(priorityQueue, (0, start))
+    parent = [-1] * g.v                                                     # init parent array
 
-    while priorityQueue:
-        minWeight, node = heapq.heappop(priorityQueue)
+    while priorityQueue:                                                    # while there are still items in the priority queue
+        minWeight, node = heapq.heappop(priorityQueue)                      # pop the last accessed node and its weight
 
-        if minWeight > dist[node]:
+        if minWeight > dist[node]:                                          # if that weight is greater than the current distance known distance to the node skip
             continue
 
-        for neighbor, weight in g.list[node]:
-            if dist[node] + weight < dist[neighbor]:
-                dist[neighbor] = dist[node] + weight;
-                heapq.heappush(priorityQueue, (dist[neighbor], neighbor))
-    return dist
+        for neighbor, weight in g.list[node]:                               # look for the neighbor nodes and its weights next to our node
+            if dist[node] + weight < dist[neighbor]:                        # if the weight to neighbor nodes + distance to get to current node is less than our known shortest path update the node
+                dist[neighbor] = dist[node] + weight;                       # update the shortest distance
+                parent[neighbor] = node                                     # add to our parent list
+                heapq.heappush(priorityQueue, (dist[neighbor], neighbor))   # push to heap
+    print(f"{dist} | parent: ", end="")
+    print(parent)
+    return dist, parent
 
-        
+def run_experiment(g, source, target, trials=5):                            # takes a graph, start node, target node, and tests it using both Dijkstra's Algorithm a number of trial times, usage: run_experiment((graph)g, (int)start_node, (int)target)
+    print(f"\nRunning benchmarks for {g.name} (V={g.v}, E={g.edges})")
+
+    total_time_array = 0                                                    # init variables to hold total time and mem usage
+    peak_memory_array = 0
+    for i in range(trials):                                                 # test 5 times
+        print(f"#{i} | ", end="")
+        tracemalloc.start()                                                 # start malloc and time counters
+        start_time = time.perf_counter()
+
+        dist_array, path = arrayBasedDijkstra(g, source)                    # run algo
+
+        end_time = time.perf_counter()                                      # end our counters
+        _ , peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        total_time_array += (end_time - start_time)                         # add the duration to total time and mem
+        peak_memory_array = max(peak_memory_array, peak)
+        print(f"    Target: {target} | Path reconstruction: {backtrack(path, source, target)}")
+
+    avg_time_array = (total_time_array / trials) * 1000                     # calculate the avg time and mem
+    mem_array_mb = peak_memory_array / (1024 * 1024)
+
+    total_time_heap = 0                                                     # do the same for priority based Dijkstra
+    peak_memory_heap = 0
+    for i in range(trials):
+        print(f"#{i} | ", end="")
+        tracemalloc.start()
+        start_time = time.perf_counter()
+
+        dist_heap, path = priorityQueueBasedDijkstra(g, source)
+
+        end_time = time.perf_counter()
+        _ , peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        total_time_heap += (end_time - start_time)
+        peak_memory_heap = max(peak_memory_heap, peak)
+        print(f"    Target: {target} | Path reconstruction: {backtrack(path, source, target)}")
+
+    avg_time_heap = (total_time_heap / trials) * 1000
+    mem_heap_mb = peak_memory_heap / (1024 * 1024)
+
+    # Output Results for Table
+    representation = "Matrix" if not g.sparse else "List"
+    print(f"  Array ({representation}): {avg_time_array:.4f} ms | {mem_array_mb:.6f} MB")
+    print(f"  Heap (List):     {avg_time_heap:.4f} ms | {mem_heap_mb:.6f} MB")
+    print(f"  Distances Match: {dist_array == dist_heap}")       
 
 def main(): 
     spars1, spars2, dens1, dens2, dens3 = initGraphs()
@@ -176,8 +244,10 @@ def main():
     dens2.printGraph()
     dens3.printGraph()
 
-    print(arrayBasedDijkstra(spars1, 0))
-    print(priorityQueueBasedDijkstra(spars1, 0))
-
+    run_experiment(spars1, 0, 5)
+    run_experiment(spars2, 0, 6)
+    run_experiment(dens1, 0, 4)
+    run_experiment(dens2, 0, 5)
+    run_experiment(dens3, 0, 7)
 if __name__ == "__main__":
     main()
