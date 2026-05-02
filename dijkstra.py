@@ -117,7 +117,7 @@ def backtrack(parent, start, target):                                       # ta
     return []                                                               # if not we didn't find a path
 
 def arrayBasedDijkstra(g, start):                                           # array-based Dijkstra's Algorithm, usage: output, parent = arrayBasedDijkstra((class)graph, (int)startNode)
-    print("Start array Dijkstra | ", end="")                                      
+    print(f"Start array Dijkstra at node {start} | ", end="")                                      
     dist = [sys.maxsize] * g.v                                              # initialize our distance array with total elements equal to vertex count of graph, setting all distances to infinity
     visited = [False] * g.v                                                 # initialize our visited array with total elements equal to vertex count of grpah, setting all visited nodes to false
     dist[start] = 0                                                         # initialize our starting node distance to 0
@@ -163,7 +163,7 @@ def arrayBasedDijkstra(g, start):                                           # ar
     return dist, parent
 
 def priorityQueueBasedDijkstra(g, start):                                   # priority queue based Dijkstra's Algorithm, usage: output, parent = priorityQueueBasedDijkstra((class)graph, (int)startNode)
-    print("Start prio.q Dijkstra | ", end="")
+    print(f"Start prio.q Dijkstra at node {start} | ", end="")
     priorityQueue = []                                                      # init priority queue
     dist = [sys.maxsize] * g.v                                              # init our dist array (see arrayBasedDijkstra for more info)
     dist[start] = 0                                                         # init our starting node in dist array
@@ -248,6 +248,6 @@ def main():
     run_experiment(spars2, 0, 6)
     run_experiment(dens1, 0, 4)
     run_experiment(dens2, 0, 5)
-    run_experiment(dens3, 0, 7)
+    run_experiment(dens3, 3, 0)
 if __name__ == "__main__":
     main()
